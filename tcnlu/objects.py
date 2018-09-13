@@ -1,5 +1,16 @@
 from collections import defaultdict
 
+
+class NLUFormat:
+    def get_name(self):
+        raise NotImplementedError("Please Implement this method")
+
+    def get_intents(self):
+        raise NotImplementedError("Please Implement this method")
+    
+    def get_entities(self):
+        raise NotImplementedError("Please Implement this method")
+
 class Item:
     def __init__(self, text, name=None, meta=None):
         self.text = text
@@ -40,7 +51,21 @@ class Intent:
         return self.params.get(key)
 
 class Entity:
-    pass
+    def __init__(self):
+        self.entries = defaultdict(list)
+        self.params = {}
+
+    def add_entries(self, language, entries):
+        self.entries[language].extend(entries)
+
+    def get_entries(self, language):
+        return self.entries[language]
+
+    def set_param(self, key, value):
+        self.params[key] = value
+
+    def get(self, key):
+        return self.params.get(key)
 
 class Type:
     def __init__(self, name):

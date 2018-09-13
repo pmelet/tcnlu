@@ -18,13 +18,16 @@ class AlexaGenerator(Alexa):
             "interactionModel": {
                 "languageModel": {
                     "invocationName": name,
-                    "intents": self.generate_intents(intents, entities, add_default=True),
+                    "intents": self.generate_intents(intents, add_default=True),
                     "types": self.generate_entities(entities)
                 }
             }
         }
 
-    def generate_intents(self, intents, entities, add_default=True, lang="en"):
+    def generate_intents(self, intents, add_default=True, lang="en"):
+        """
+        Read intents objects, and generate alexa intents
+        """
         ret = []
         for intent in intents.values():
             samples = intent.samples.get(lang)
@@ -41,6 +44,10 @@ class AlexaGenerator(Alexa):
         return ret
 
     def _get_type(self, item):
+        """
+        Given an object Item, determine whether the type is Standard ot Custom
+        Return : type name, True if LITERAL
+        """
         meta = item.meta
         if meta and type(meta) == StandardType:
             meta = meta.get("alexa")
@@ -50,6 +57,10 @@ class AlexaGenerator(Alexa):
             return self._alexa_name(meta), False
 
     def collect_slots(self, samples):
+        """
+        Read all samples and collect slots mentionned
+        Return: list of (slot name, type)
+        """
         slots = set()
         for sample in samples:
             for item in sample:
@@ -59,11 +70,15 @@ class AlexaGenerator(Alexa):
                     slots.add((self._alexa_name(alias), meta))
         return slots
 
-    _alexa_sample_patern = re.compile('[^a-zA-Z0-9_{} ]+')
+    _alexa_sample_pattern = re.compile('[^a-zA-Z0-9_{} ]+')
     def get_sample_element(self, item):
+        """
+        Given an Item object, generate the Alexa representation of the part of sample is represents
+        Return: string
+        """
         alias, source_text = item.name, item.text
         text = transform_numbers(source_text)
-        text = self._alexa_sample_patern.sub('', text)
+        text = self._alexa_sample_pattern.sub('', text)
         if alias:
             _, example = self._get_type(item)
             if example:
@@ -72,11 +87,13 @@ class AlexaGenerator(Alexa):
         return text
 
     def generate_entities(self, entities):
+        """
+        """
         ret = []
         for entity in entities.values():
             ret.append({
-                "name": self._alexa_name(get(entity, "info.name")),
-                "values": [{"name": entry} for entry in get(entity, "en")]
+                "name": self._alexa_name(entity.get("name")),
+                "values": [{"name": entry} for entry in entity.get_entries("en")]
             })
         return ret
 
