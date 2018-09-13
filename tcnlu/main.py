@@ -80,15 +80,18 @@ def detect_folder(folder):
     folder_structure = build_folder_structure(folder)
     return detect_folder_structure(folder_structure)
 
-def detect(args):
-    if isfile(args.ifile):
+def detect_path(path):
+    if isfile(path):
         try:
-            format, version = detect_zipfile(zipfile.ZipFile(args.ifile))
+            return detect_zipfile(zipfile.ZipFile(path))
         except zipfile.BadZipFile:
-            format, version = detect_plainfile(args.ifile)
+            return detect_plainfile(path)
     else:
-        format, version = detect_folder(args.ifile)
-    
+        return detect_folder(path)
+    return None, None
+
+def detect(args):
+    format, version = detect_path(args.ifile)
     if format is None:
         sys.exit(ERROR_INPUT_FORMAT_NOT_DETECTED)
     else:
@@ -98,6 +101,18 @@ def detect(args):
 def check(args):
     print(args)
 
+FORMAT_HELPERS = {
+    DIALOG_FLOW_V1 : {
+        "parser": DialogFlowV1Parser,
+        "generators": None
+    },
+    ALEXA_JSON : {
+        "parser": None,
+        "generators": (AlexaGenerator, AlexaResponseGenerator)
+    }
+}
+
+
 def transform(args):
     intents = None
     responses = None
@@ -106,8 +121,12 @@ def transform(args):
     if len(args.ofile) > 1:
         responses = args.ofile[1]
 
-    from_object = DialogFlowV1Parser(args.ifile, name="etraveli")
+    from_format = detect_path(args.ifile)
+    print(from_format)
+    parser = get(FORMAT_HELPERS[from_format], "parser")
+    from_object = parser(args.ifile, name="etraveli")
 
+    #TODO : should be based on "output format". Harcoded for now
     if intents:
         to_object = AlexaGenerator()
         data = json.dumps(to_object.generate(from_object), indent=2)
