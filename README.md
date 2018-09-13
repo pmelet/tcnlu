@@ -9,14 +9,16 @@ This package is still in development.
 ## Detect file format
     tcnlu detect [path]
 
-detects format and variant
-return 0 if detected and valid, else return error code (see 'check')
+Detects format and variant, outputing the result on stdout.
+
+Returns 0 if detected and valid, else return error code (see 'check')
 
  - 1 = input format is not recognized
  - 2 = input file was analyzed and is corrupted
 
 ## Format transcoding
     tcnlu transform [--input-format <format>[:<variant>]] --output-format <format>[:<variant>] input output [output]
+
 Generate training file in a format from training file in another.
 
  - input-format is optional (should be detected)
