@@ -3,15 +3,6 @@ from .tools import get
 from .humans import numbers as transform_numbers
 from .objects import *
 
-MAP_DIALOG_FLOW_TO_ALEXA = {
-    "sys.any" :         "AMAZON.LITERAL",
-    "sys.duration" :    "AMAZON.DURATION",
-    "sys.number" :      "AMAZON.NUMBER",
-    "sys.geo-country" : "AMAZON.Country",
-    "sys.geo-city" :    "AMAZON.EUROPE_CITY", #TODO : fix!!
-    "sys.email":        "AMAZON.LITERAL",
-}
-
 class Alexa:
     _alexa_name_patern = re.compile('[^a-zA-Z0-9_]+')
     def _alexa_name(self, string):

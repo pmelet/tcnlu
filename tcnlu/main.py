@@ -92,7 +92,7 @@ def detect(args):
     if format is None:
         sys.exit(ERROR_INPUT_FORMAT_NOT_DETECTED)
     else:
-        print(format, version, format_stats(format, version))
+        print(format, version)
         sys.exit(0)
 
 def check(args):
@@ -125,7 +125,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("function")
     parser.add_argument("ifile", nargs="?")
-    parser.add_argument("ofile", nargs="+")
+    parser.add_argument("ofile", nargs="*")
     args = parser.parse_args()
-    pprint(args)
     globals().get(args.function)(args)
