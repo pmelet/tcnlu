@@ -18,11 +18,13 @@ Display recognized formats. Columns:
  - read    : format can be read by the tool
  - write   : format can be written by the tool
 
-    > tcnlu formats
-    format        version  read    write
-    ----------  ---------  ------  -------
-    DialogFlow          1  True    False
-    Alexa                  False   True
+```
+> tcnlu formats
+format        version  read    write
+----------  ---------  ------  -------
+DialogFlow          1  True    False
+Alexa                  False   True
+```
 
 ## Detect file format
     tcnlu detect [path]
