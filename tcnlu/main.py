@@ -4,14 +4,20 @@ from os.path import isfile, join
 import re
 from collections import defaultdict
 from html import escape
-import argparse
 import zipfile
 import json
 from pprint import pprint
+from tabulate import tabulate
+import argh
+from argh import arg
+from argh import EntryPoint
+
 from .humans import numbers as transform_numbers
 from .tools import get
 from .dialogflow import DialogFlowV1Parser
 from .alexa import AlexaGenerator, AlexaResponseGenerator
+
+app = EntryPoint('tcnlu')
 
 ERROR_INPUT_FORMAT_NOT_DETECTED = 1
 
@@ -23,8 +29,10 @@ DIALOG_FLOW_V2 = (DIALOG_FLOW, 2)
 ALEXA_JSON = (ALEXA, None)
 
 
-def format_stats(format, version):
-    return 0, 0
+def format_format(format, version):
+    if version is None:
+        return format
+    return "%s:%s" % (format, version)
 
 FORMAT_NOT_DETECTED = (None, None)
 
@@ -90,16 +98,14 @@ def detect_path(path):
         return detect_folder(path)
     return None, None
 
-def detect(args):
-    format, version = detect_path(args.ifile)
+@app
+def detect(path):
+    format, version = detect_path(path)
     if format is None:
         sys.exit(ERROR_INPUT_FORMAT_NOT_DETECTED)
     else:
         print(format, version)
         sys.exit(0)
-
-def check(args):
-    print(args)
 
 FORMAT_HELPERS = {
     DIALOG_FLOW_V1 : {
@@ -112,38 +118,36 @@ FORMAT_HELPERS = {
     }
 }
 
+@app
+def formats():
+    tab = []
+    for helper, funcs in FORMAT_HELPERS.items():
+        format, version = helper
+        tab.append([format, version, funcs.get("parser") is not None, funcs.get("generators") is not None])
+    print(tabulate(tab, headers=["format", "version", "read", "write"]))
 
-def transform(args):
-    intents = None
-    responses = None
-    if len(args.ofile) > 0:
-        intents = args.ofile[0]
-    if len(args.ofile) > 1:
-        responses = args.ofile[1]
+@arg('ifile', help='input file')
+@arg('--of', help='output format and version. format[:version]')
+@arg('ofiles', nargs='+', help='output files')
+@app
+def transform(ifile : "input file", ofiles, of=None):
+    "Generate training file in a format from training file in another."
 
-    from_format = detect_path(args.ifile)
-    print(from_format)
+    # detect input format, and find parser
+    from_format = detect_path(ifile)
     parser = get(FORMAT_HELPERS[from_format], "parser")
-    from_object = parser(args.ifile, name="etraveli")
+    from_object = parser(ifile, name="etraveli")
 
     #TODO : should be based on "output format". Harcoded for now
-    if intents:
-        to_object = AlexaGenerator()
+    generators = get(FORMAT_HELPERS[ALEXA_JSON], "generators")
+    for (generator, ofile) in zip(generators, ofiles):
+        to_object = generator()
         data = json.dumps(to_object.generate(from_object), indent=2)
-        with open(intents, "w") as h:
-            h.write(data)
-
-    if responses:
-        to_object = AlexaResponseGenerator()
-        data = json.dumps(to_object.generate(from_object), indent=2)
-
-        with open(responses, "w") as h:
+        with open(ofile, "w") as h:
             h.write(data)
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("function")
-    parser.add_argument("ifile", nargs="?")
-    parser.add_argument("ofile", nargs="*")
-    args = parser.parse_args()
-    globals().get(args.function)(args)
+    #parser = argh.ArghParser()
+    #parser.add_commands([formats, detect, transform])
+    #parser.dispatch()
+    app()

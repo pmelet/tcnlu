@@ -11,4 +11,5 @@ setup(name='tcnlu',
       entry_points = {
          'console_scripts': ['tcnlu=tcnlu.main:main'],
       },
+      install_requires = ["argh", "tabulate"],
       zip_safe=False)
