@@ -47,4 +47,4 @@ Generate training file in a format from training file in another.
 with:
 
  - `alexa json`: a file that can be imported into alexa
- - `responses json`: a file that can be used to generate responses in a lambda function
+ - `responses json`: a file that can be used to generate responses in a lambda function. Lambda function is available in `resources/alexa`
