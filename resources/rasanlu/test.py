@@ -11,8 +11,10 @@ responses = json.load(open(responses_file))
 while True:
     question = input("> ")
     response = interpreter.parse(question)
-    #pprint(response)
+    pprint(response)
     intent = response.get("intent").get("name")
     answers = responses.get(intent)
     answer = answers[random.randrange(len(answers))]
+    print ()
     print (answer)
+    print ()

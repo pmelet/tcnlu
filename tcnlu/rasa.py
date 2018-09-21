@@ -36,10 +36,10 @@ class RasaMarkDownGenerator(Rasa):
 
     def generate_item(self, item):
         if item.name:
-            atype = self.get_type(item)
-            if atype is None:
-                return "[%s](%s)" % (item.text, item.name)    
-            return "[%s](%s:%s)" % (item.text, item.name, atype)
+            #atype = self.get_type(item)
+            #if atype is None:
+            return "[%s](%s)" % (item.text, item.name)    
+            #return "[%s](%s:%s)" % (item.text, item.name, atype)
         return item.text
 
     def get_type(self, item):
@@ -59,7 +59,7 @@ class RasaMarkDownGenerator(Rasa):
 
     def generate_entity(self, entity, lang="en"):
         name = entity.get("name")
-        ret = [ "## lookup:%s" % self._rasa_name(name) ]
+        ret = [ "## synonym:%s" % self._rasa_name(name) ]
         entries = set()
         for entry in entity.entries.get(lang) or []:
             entries.add(entry.get("value"))
