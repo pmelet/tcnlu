@@ -66,5 +66,5 @@ with:
     tcnlu transform <input file in another format> --of rasanlu:[markdown or json] <rasa file> [responses json]
 with:
 
- - `rasa file`: a file that can be imported into alexa
+ - `rasa file`: a file that can be imported into rasa nlu
  - `responses json`: a file that can be used to generate responses
