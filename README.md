@@ -20,10 +20,17 @@ Display recognized formats. Columns:
 
 ```
 > tcnlu formats
-format        version  read    write
-----------  ---------  ------  -------
-DialogFlow          1  True    False
-Alexa                  False   True
+╒════════════╤══════════╤═══════════╤════════╤═════════╕
+│ provider   │ format   │   version │ read   │ write   │
+╞════════════╪══════════╪═══════════╪════════╪═════════╡
+│ DialogFlow │          │         1 │ True   │ False   │
+├────────────┼──────────┼───────────┼────────┼─────────┤
+│ Alexa      │          │           │ False  │ True    │
+├────────────┼──────────┼───────────┼────────┼─────────┤
+│ RASANlu    │ json     │           │ False  │ False   │
+├────────────┼──────────┼───────────┼────────┼─────────┤
+│ RASANlu    │ markdown │           │ False  │ True    │
+╘════════════╧══════════╧═══════════╧════════╧═════════╛
 ```
 
 ## Detect file format
