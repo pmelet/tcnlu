@@ -37,14 +37,27 @@ Returns 0 if detected and valid, else return error code
  - 2 = input file was analyzed and is corrupted
 
 ## Format transcoding
-    tcnlu transform --of <format>[:<variant>] input output [output]
+    tcnlu transform input --of <format>[:<variant>] output [output ...]
 
 Generate training file in a format from training file in another.
 
+Returns 0 if detected and valid, else return error code
+
+ - 1 = input format is not recognized
+ - 10 = output format is not recognized
+
 ### Alexa
 
-    tcnlu transform <input file in another format> <alexa json> [responses json]
+    tcnlu transform <input file in another format> --of alexa <alexa json> [responses json]
 with:
 
  - `alexa json`: a file that can be imported into alexa
  - `responses json`: a file that can be used to generate responses in a lambda function. Lambda function is available in `resources/alexa`
+
+ ### Rasa
+
+    tcnlu transform <input file in another format> --of rasanlu:[markdown or json] <rasa file> [responses json]
+with:
+
+ - `rasa file`: a file that can be imported into alexa
+ - `responses json`: a file that can be used to generate responses

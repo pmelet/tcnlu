@@ -36,7 +36,7 @@ class DialogFlowV1Parser(NLUFormat):
             else:
                 name = file.rsplit(".",1)[0]
                 entities[name].set_param("name", get(data, "name"))
-        pprint(entities)
+        #pprint(entities)
         self.entities = entities
 
     def _parse_intents(self):

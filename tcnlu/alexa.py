@@ -1,4 +1,4 @@
-import re
+import re, json
 from .tools import get
 from .humans import numbers as transform_numbers
 from .objects import *
@@ -12,17 +12,18 @@ class AlexaGenerator(Alexa):
     def __init__(self):
         pass
 
-    def generate(self, source):
+    def generate(self, source, lang="en"):
         name, intents, entities = source.get_name(), source.get_intents(), source.get_entities()
-        return {
+        ret = {
             "interactionModel": {
                 "languageModel": {
                     "invocationName": name,
-                    "intents": self.generate_intents(intents, add_default=True),
-                    "types": self.generate_entities(entities)
+                    "intents": self.generate_intents(intents, add_default=True, lang=lang),
+                    "types": self.generate_entities(entities, lang=lang)
                 }
             }
         }
+        return json.dumps(ret, indent=2)
 
     def generate_intents(self, intents, add_default=True, lang="en"):
         """
@@ -86,14 +87,14 @@ class AlexaGenerator(Alexa):
             return " {%s} " % self._alexa_name(alias)
         return text
 
-    def generate_entities(self, entities):
+    def generate_entities(self, entities, lang="en"):
         """
         """
         ret = []
         for entity in entities.values():
             ret.append({
                 "name": self._alexa_name(entity.get("name")),
-                "values": [{"name": entry} for entry in entity.get_entries("en")]
+                "values": [{"name": entry} for entry in entity.get_entries(lang)]
             })
         return ret
 
@@ -102,10 +103,10 @@ class AlexaResponseGenerator(Alexa):
     def __init__(self):
         pass
 
-    def generate(self, source):
+    def generate(self, source, lang="en"):
         intents = source.get_intents()
         ret = {}
         for intent in intents.values():
             name = self._alexa_name(intent.get("name"))
-            ret[name] = intent.responses
-        return ret
+            ret[name] = intent.responses.get(lang)
+        return json.dumps(ret, indent=2)

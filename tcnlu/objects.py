@@ -82,14 +82,30 @@ class CustomType(Type):
     def get(self, engine):
         return self.name
 
+class RegexType(Type):
+    def __init__(self, regex):
+        self.regex = regex
+
 class StandardTypes:
     all_types = [
-        StandardType(dialogflow="sys.any", alexa="AMAZON.LITERAL"),
-        StandardType(dialogflow="sys.duration", alexa="AMAZON.DURATION"),
-        StandardType(dialogflow="sys.number", alexa="AMAZON.NUMBER"),
-        StandardType(dialogflow="sys.geo-country", alexa="AMAZON.Country"),
-        StandardType(dialogflow="sys.geo-city", alexa="AMAZON.EUROPE_CITY"),
-        StandardType(dialogflow="sys.email", alexa="AMAZON.LITERAL"),
+        StandardType(dialogflow="sys.any", 
+                     alexa="AMAZON.LITERAL", 
+                     rasanlu=None),
+        StandardType(dialogflow="sys.duration", 
+                     alexa="AMAZON.DURATION", 
+                     rasanlu=None),
+        StandardType(dialogflow="sys.number",
+                     alexa="AMAZON.NUMBER", 
+                     rasanlu=None),
+        StandardType(dialogflow="sys.geo-country", 
+                     alexa="AMAZON.Country", 
+                     rasanlu=None),
+        StandardType(dialogflow="sys.geo-city", 
+                     alexa="AMAZON.EUROPE_CITY", 
+                     rasanlu=None),
+        StandardType(dialogflow="sys.email", 
+                     alexa="AMAZON.LITERAL", 
+                     rasanlu=RegexType(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")),
     ]
     @classmethod
     def find(cls, engine, key):

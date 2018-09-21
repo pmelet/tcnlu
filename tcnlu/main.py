@@ -1,8 +1,7 @@
 import json, sys, os
 from os import listdir
-from os.path import isfile, join
 import re
-from collections import defaultdict
+from collections import defaultdict, Iterable
 from html import escape
 import zipfile
 import json
@@ -16,96 +15,13 @@ from .humans import numbers as transform_numbers
 from .tools import get
 from .dialogflow import DialogFlowV1Parser
 from .alexa import AlexaGenerator, AlexaResponseGenerator
+from .rasa import RasaMarkDownGenerator, RasaResponseGenerator
+from .exceptions import TcnluError
+from .exceptions import ERROR_INPUT_FORMAT_NOT_DETECTED, ERROR_OUTPUT_FORMAT_NOT_DETECTED
+from .formats import DIALOG_FLOW_V1, ALEXA_JSON, FORMAT_NOT_DETECTED, RASANLU_JSON, RASANLU_MKD
+from .formats import detect_path
 
 app = EntryPoint('tcnlu')
-
-ERROR_INPUT_FORMAT_NOT_DETECTED = 1
-
-DIALOG_FLOW = "DialogFlow"
-ALEXA = "Alexa"
-
-DIALOG_FLOW_V1 = (DIALOG_FLOW, 1)
-DIALOG_FLOW_V2 = (DIALOG_FLOW, 2)
-ALEXA_JSON = (ALEXA, None)
-
-
-def format_format(format, version):
-    if version is None:
-        return format
-    return "%s:%s" % (format, version)
-
-FORMAT_NOT_DETECTED = (None, None)
-
-def detect_folder_structure(folders):
-    if folders.get("agent.json") == "" \
-       and type(folders.get("intents"))==dict \
-       and type(folders.get("entities"))==dict :
-        return DIALOG_FLOW_V1
-    return FORMAT_NOT_DETECTED
-
-def build_zipfile_structure(archive):
-    ret = {}
-    for name in archive.namelist():
-        items = name.split("/")
-        current = ret
-        for index, item in enumerate(items):
-            if item == "":
-                continue
-            if index == len(items)-1:
-                current.setdefault(item, "")
-            else:
-                current.setdefault(item, {})
-            current = current.get(item)
-    return ret
-
-def detect_zipfile(archive):
-    folder_structure = build_zipfile_structure(archive)
-    return detect_folder_structure(folder_structure)
-
-def detect_jsonfile(jsonfile):
-    if "interactionModel" in jsonfile.keys():
-        return ALEXA_JSON
-    return FORMAT_NOT_DETECTED
-
-def detect_plainfile(plainfile):
-    try:
-        return detect_jsonfile(json.load(open(plainfile)))
-    except Exception:
-        pass
-    return FORMAT_NOT_DETECTED
-
-def build_folder_structure(folder):
-    ret = {}
-    for entry in listdir(folder):
-        filename = os.path.join(folder, entry)
-        if isfile(filename):
-            ret[entry] = ""
-        else:
-            ret[entry] = build_folder_structure(filename)
-    return ret
-
-def detect_folder(folder):
-    folder_structure = build_folder_structure(folder)
-    return detect_folder_structure(folder_structure)
-
-def detect_path(path):
-    if isfile(path):
-        try:
-            return detect_zipfile(zipfile.ZipFile(path))
-        except zipfile.BadZipFile:
-            return detect_plainfile(path)
-    else:
-        return detect_folder(path)
-    return None, None
-
-@app
-def detect(path):
-    format, version = detect_path(path)
-    if format is None:
-        sys.exit(ERROR_INPUT_FORMAT_NOT_DETECTED)
-    else:
-        print(format, version)
-        sys.exit(0)
 
 FORMAT_HELPERS = {
     DIALOG_FLOW_V1 : {
@@ -115,22 +31,94 @@ FORMAT_HELPERS = {
     ALEXA_JSON : {
         "parser": None,
         "generators": (AlexaGenerator, AlexaResponseGenerator)
-    }
+    },
+    RASANLU_JSON : {
+        "parser": None,
+        "generators": None
+    },
+    RASANLU_MKD : {
+        "parser": None,
+        "generators": (RasaMarkDownGenerator, RasaResponseGenerator)
+    },
 }
 
-@app
-def formats():
-    tab = []
-    for helper, funcs in FORMAT_HELPERS.items():
-        format, version = helper
-        tab.append([format, version, funcs.get("parser") is not None, funcs.get("generators") is not None])
-    print(tabulate(tab, headers=["format", "version", "read", "write"]))
+def parse_format(input):
+    """
+    there are several ways to declare a format:
+    - provider:format:version, if provider have different formats with different versions
+    - provider:version, if provider have one format with different versions
+    - provider:format, if provider have various formats, unversioned
+    """
+    if input is None:
+        return None
+    x = input.split(":")
+    input_provider = x[0]
+    input_details = x[1:]
 
+    best_helper = None
+    match_helper = -1
+
+    for helper, _ in FORMAT_HELPERS.items():
+        provider, format, version = helper
+
+        if (provider.lower() != input_provider.lower()):
+            # useless
+            continue        
+        match = 1
+        for input_detail in input_details:
+            # iterate on additional info, and try to match
+            match += (format == input_detail or str(format) == input_detail)
+            match += (version == input_detail or str(version) == input_detail)
+
+        if match > match_helper:
+            match_helper = match
+            best_helper = helper
+    
+    return best_helper
+
+@arg('path', help='path of file or folder to analyze')
+@app
+def detect(path):
+    "Detect format and variant, outputing the result on stdout."
+
+    provider, format, version = detect_path(path)
+    if provider is None:
+        sys.exit(ERROR_INPUT_FORMAT_NOT_DETECTED)
+    else:
+        formats_table([(provider, format, version)])
+        sys.exit(0)
+
+@app
+@arg('formats', nargs='*', help='detect formats and show details')
+def formats(formats):
+    "Display recognized formats."
+
+    filter = FORMAT_HELPERS.keys()
+    if formats:    
+        filter = []
+        for format in formats:
+            f = parse_format(format)
+            if f:
+                filter.append(f)
+    formats_table(filter)
+
+def formats_table(formats, header=True):
+    tab = [("provider", "format", "version", "read", "write")]
+    for helper in formats:
+        funcs = FORMAT_HELPERS.get(helper)
+        provider, format, version = helper
+        tab.append([provider, format, version, funcs.get("parser") is not None, funcs.get("generators") is not None])
+    if header:
+        print(tabulate(tab, tablefmt="fancy_grid", headers="firstrow"))
+    else:
+        print(tabulate(tab, tablefmt="plain"))
+
+@arg('--lang', help='language', required=False)
 @arg('ifile', help='input file')
-@arg('--of', help='output format and version. format[:version]')
+@arg('--of', help='output format and version. format[:version]', required=True)
 @arg('ofiles', nargs='+', help='output files')
 @app
-def transform(ifile : "input file", ofiles, of=None):
+def transform(ifile : "input file", ofiles, of=None, lang="en"):
     "Generate training file in a format from training file in another."
 
     # detect input format, and find parser
@@ -138,16 +126,24 @@ def transform(ifile : "input file", ofiles, of=None):
     parser = get(FORMAT_HELPERS[from_format], "parser")
     from_object = parser(ifile, name="etraveli")
 
-    #TODO : should be based on "output format". Harcoded for now
-    generators = get(FORMAT_HELPERS[ALEXA_JSON], "generators")
+    to_format = parse_format(of)
+    if to_format is None:
+        raise TcnluError(ERROR_OUTPUT_FORMAT_NOT_DETECTED)
+    generators = get(FORMAT_HELPERS[to_format], "generators")
+    if not isinstance(generators, Iterable):
+        generators = [ generators ]
     for (generator, ofile) in zip(generators, ofiles):
         to_object = generator()
-        data = json.dumps(to_object.generate(from_object), indent=2)
-        with open(ofile, "w") as h:
-            h.write(data)
+        data = to_object.generate(from_object, lang=lang)
+        if ofile == "-":
+            print (data)
+        else:
+            with open(ofile, "w") as h:
+                h.write(data)
 
 def main():
-    #parser = argh.ArghParser()
-    #parser.add_commands([formats, detect, transform])
-    #parser.dispatch()
-    app()
+    try:
+        app()
+    except TcnluError as e:
+        print(e)
+        sys.exit(e.error_code)
