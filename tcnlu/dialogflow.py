@@ -3,7 +3,7 @@ from os import listdir
 from os.path import isfile, join
 from collections import defaultdict
 from .tools import get, enforce_list
-from .objects import Entity, Intent, Sample, Item, StandardTypes, CustomType, NLUFormat
+from .objects import Entity, Intent, Sample, Item, StandardTypes, CustomType, NLUFormat, Slot
 from pprint import pprint
 import zipfile
 
@@ -57,7 +57,16 @@ class DialogFlowV1Parser(NLUFormat):
                 # intent file, contains metadata : parameters, messages, etc.
                 name = file.rsplit(".",1)[0]
                 intents[name].set_param("name", get(data, "name"))
-                intents[name].set_entities(get(data, "responses.0.parameters"))
+                for parameter in get(data, "responses.0.parameters"):
+                    slot_name     = get(parameter, "name")
+                    slot_dataType = get(parameter, "dataType")
+                    slot_required = get(parameter, "required")
+                    slot_prompts  = get(parameter, "prompts")
+                    slot = Slot(slot_name, self._collect_type(slot_dataType), slot_required)
+                    if slot_required and slot_prompts:
+                        for prompt in slot_prompts:
+                            slot.add_prompt(get(prompt, "lang"), get(prompt, "value"))
+                    intents[name].add_slot(slot)
                 for item in get(data, "responses.0.messages"):
                     intents[name].add_responses(item.get("lang"), enforce_list(item.get("speech")))
         self.intents = intents

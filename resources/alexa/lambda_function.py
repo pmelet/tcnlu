@@ -34,26 +34,35 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
     }
 
 
-def build_response(session_attributes, speechlet_response):
+def build_response(speechlet_response, session_attributes={}):
     return {
         'version': '1.0',
         'sessionAttributes': session_attributes,
         'response': speechlet_response
     }
+    
+def continue_dialog(session_attributes={}):
+    message = {}
+    message['shouldEndSession'] = False
+    message['directives'] = [{'type': 'Dialog.Delegate'}]
+    return build_response(message, session_attributes)
 
 
 # --------------- Functions that control the skill's behavior ------------------
 
-def get_welcome_response():
+def get_welcome_response(locale="fr-FR"):
     """ If we wanted to initialize the session to have some attributes we could
     add those here
     """
-    session_attributes = {}
     card_title = "Welcome"
-    speech_output = "Welcome ! Do you have questions for me?"
+    speech_outputs = {
+        "en-EN" : "Welcome!",
+        "fr-FR" : "Bonjour!"
+    }
+    speech_output = speech_outputs.get(locale)
     reprompt_text = speech_output
     should_end_session = False
-    return build_response(session_attributes, build_speechlet_response(
+    return build_response(build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
 def answer_age(intent, session):
@@ -62,7 +71,6 @@ def answer_age(intent, session):
     """
 
     card_title = intent['name']
-    session_attributes = {}
     should_end_session = False
 
     born = date(1979, 10, 22)
@@ -72,15 +80,14 @@ def answer_age(intent, session):
     speech_output = str(age)
     reprompt_text = speech_output
 
-    return build_response(session_attributes, build_speechlet_response(
+    return build_response(build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
 def answer_basic(intent, session, speech_output):
     card_title = intent['name']
-    session_attributes = {}
     should_end_session = False
     reprompt_text = speech_output
-    return build_response(session_attributes, build_speechlet_response(
+    return build_response(build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
 # --------------- Events ------------------
@@ -100,7 +107,7 @@ def on_launch(launch_request, session):
     print("on_launch requestId=" + launch_request['requestId'] +
           ", sessionId=" + session['sessionId'])
     # Dispatch to your skill's launch
-    return get_welcome_response()
+    return get_welcome_response(launch_request['locale'])
 
 
 def on_intent(intent_request, session):
@@ -111,11 +118,24 @@ def on_intent(intent_request, session):
 
     intent = intent_request['intent']
     intent_name = intent_request['intent']['name']
+
     response = responses.get(intent_name)
     if response and len(response) > 0:
         response = response[0]
     else:
         response = "I have nothing to answer to that"
+        
+    for x in intent_request.get('intent',{}).get('slots',{}).values():
+        k,v = x.get("name"),x.get("value")
+        resolutionsPerAuthority = x.get("resolutions",{}).get("resolutionsPerAuthority")
+        if resolutionsPerAuthority:
+            values = resolutionsPerAuthority[0].get("values")
+            if values and len(values)>0:
+                name = values[0].get("value",{}).get("name")
+                if name:
+                    v = name
+        if k and v:
+            response = response.replace("$%s"%k, v)
 
     # Dispatch to your skill's intent handlers
     return answer_basic(intent, session, response)
@@ -156,7 +176,11 @@ def lambda_handler(event, context):
     if event['request']['type'] == "LaunchRequest":
         return on_launch(event['request'], event['session'])
     elif event['request']['type'] == "IntentRequest":
+        dialog_state = event['request']['dialogState']
+        if dialog_state in ("STARTED", "IN_PROGRESS"):
+            return continue_dialog()
         return on_intent(event['request'], event['session'])
     elif event['request']['type'] == "SessionEndedRequest":
         return on_session_ended(event['request'], event['session'])
-    return build_response({}, build_speechlet_response("error", "error!!", "try again, or not", True))
+        
+    return build_response(build_speechlet_response("error", "error!!", "try again, or not", true))

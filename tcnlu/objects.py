@@ -31,18 +31,31 @@ class Sample:
     def add_item(self, text, name=None, meta=None):
         self.items.append(Item(text, name, meta))
 
+class Slot():
+    def __init__(self, name, dataType, required):
+        self.name = name
+        self.dataType = dataType
+        self.required = required
+        self.prompts = defaultdict(list)
+
+    def add_prompt(self, lang, prompt):
+        self.prompts[lang].append(prompt)
+
+    def __repr__(self):
+        return "%r %r %r %r" % (self.name, self.dataType, self.required, self.prompts)
+
 class Intent:
     def __init__(self):
         self.samples = defaultdict(list)
-        self.entities = None
+        self.slots = list()
         self.params = {}
         self.responses = defaultdict(list)
 
     def add_samples(self, language, samples):
         self.samples[language].extend(samples)
 
-    def set_entities(self, entities):
-        self.entities = entities
+    def add_slot(self, slot):
+        self.slots.append(slot)
 
     def add_responses(self, language, responses):
         if responses:
@@ -53,6 +66,9 @@ class Intent:
 
     def get(self, key):
         return self.params.get(key)
+
+    def __repr__(self):
+        return "%r" % self.params
 
 class Entity:
     def __init__(self):

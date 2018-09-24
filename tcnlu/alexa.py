@@ -1,7 +1,9 @@
 import re, json
-from .tools import get, enforce_list, flatten
+from .tools import get, enforce_list, flatten, walk_array
 from .humans import numbers as transform_numbers
 from .objects import *
+import uuid
+
 
 class Alexa:
     _alexa_name_patern = re.compile('[^a-zA-Z0-9_]+')
@@ -14,16 +16,60 @@ class AlexaGenerator(Alexa):
 
     def generate(self, source, lang="en"):
         name, intents, entities = source.get_name(), source.get_intents(), source.get_entities()
+
+        dialog_intents, prompts = self.generate_prompts(intents, lang=lang)
+
         ret = {
             "interactionModel": {
                 "languageModel": {
                     "invocationName": name,
                     "intents": self.generate_intents(intents, add_default=True, lang=lang),
                     "types": self.generate_entities(entities, lang=lang)
-                }
+                },
+                "dialog": {
+                    "intents": dialog_intents
+                },
+                "prompts": prompts
             }
         }
         return json.dumps(ret, indent=2)
+
+    def generate_prompts(self, intents, lang="en"):
+        dialog_intents_slots, dialog_prompts = defaultdict(list), []
+        for _, intent in intents.items():
+            for slot in intent.slots:
+                if slot.required:
+                    dataType = slot.dataType.get("alexa")
+                    id = str(uuid.uuid4())
+                    prompts = slot.prompts.get(lang)
+                    if prompts:
+                        dialog_prompts.append({
+                            "id": "Elicit.Slot."+id,
+                            "variations": [{
+                                "type": "PlainText",
+                                "value": value
+                            } for value in prompts]
+                        })
+                        intent_name = self._alexa_name(intent.get("name"))
+                        dialog_intents_slots[intent_name].append({
+                            "name": self._alexa_name(slot.name),
+                            "type": dataType,
+                            "confirmationRequired": False,
+                            "elicitationRequired": True,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot."+id,
+                            }
+                        })
+
+        dialog_intents = []
+        for intent_name, slots in dialog_intents_slots.items():
+            dialog_intents.append({
+                "name": intent_name,
+                "confirmationRequired": False,
+                "prompts": {},
+                "slots": slots
+            })
+        return dialog_intents, dialog_prompts
 
     def generate_intents(self, intents, add_default=True, lang="en"):
         """
@@ -114,19 +160,6 @@ class AlexaGenerator(Alexa):
         return ret
 
 
-def walk_array(array, ret = []):
-    head, tail = array[0], array[1:] if len(array) > 1 else None
-    newret = []
-    for x in enforce_list(head):
-        if ret:
-            for ex in ret:
-                newret.append(ex + [x])
-        else:
-            newret.append([x])
-    if tail:
-        return walk_array(tail, newret)
-    return newret
-
 class AlexaResponseGenerator(Alexa):
     def __init__(self):
         pass
@@ -134,7 +167,8 @@ class AlexaResponseGenerator(Alexa):
     def generate(self, source, lang="en"):
         intents = source.get_intents()
         ret = {}
-        for intent in intents.values():
+        for k, intent in intents.items():
+            #print(k, intent)
             name = self._alexa_name(intent.get("name"))
             resp = intent.responses.get(lang)
             if resp:

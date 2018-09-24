@@ -50,12 +50,10 @@ def get(data, path, donepath=[], default=None, transform=None, sep=".", verbose=
             return default
     return default if sub is None else sub  
 
-
 def enforce_list(o):
     if type(o) == list:
         return o
     return [o]
-
 
 def flatten(list_of_lists, flat_list=[]):
     for item in list_of_lists:
@@ -64,3 +62,16 @@ def flatten(list_of_lists, flat_list=[]):
         else:
             flat_list.append(item)
     return flat_list
+
+def walk_array(array, ret = []):
+    head, tail = array[0], array[1:] if len(array) > 1 else None
+    newret = []
+    for x in enforce_list(head):
+        if ret:
+            for ex in ret:
+                newret.append(ex + [x])
+        else:
+            newret.append([x])
+    if tail:
+        return walk_array(tail, newret)
+    return newret
