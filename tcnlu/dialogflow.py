@@ -59,7 +59,7 @@ class DialogFlowV1Parser(NLUFormat):
                 intents[name].set_param("name", get(data, "name"))
                 intents[name].set_entities(get(data, "responses.0.parameters"))
                 for item in get(data, "responses.0.messages"):
-                    intents[name].add_responses(item["lang"], enforce_list(item["speech"]))
+                    intents[name].add_responses(item.get("lang"), enforce_list(item.get("speech")))
         self.intents = intents
 
     def _extract_samples(self, data):

@@ -17,6 +17,9 @@ class Item:
         self.name = name
         self.meta = meta
 
+    def __repr__(self):
+        return "%r (%r, %r)" % (self.text, self.name, self.meta)
+
 class Sample:
     def __init__(self, items = []):
         self.items = items
@@ -42,7 +45,8 @@ class Intent:
         self.entities = entities
 
     def add_responses(self, language, responses):
-        self.responses[language].extend(responses)
+        if responses:
+            self.responses[language].extend(responses)
 
     def set_param(self, key, value):
         self.params[key] = value
@@ -88,8 +92,17 @@ class RegexType(Type):
 
 class StandardTypes:
     all_types = [
+        StandardType(dialogflow="sys.ignore", 
+                     alexa=None, 
+                     rasanlu=None),
+        StandardType(dialogflow="sys.language", 
+                     alexa="AMAZON.Language", 
+                     rasanlu=None),
         StandardType(dialogflow="sys.any", 
                      alexa="AMAZON.LITERAL", 
+                     rasanlu=None),
+        StandardType(dialogflow="sys.date", 
+                     alexa="AMAZON.DATE", 
                      rasanlu=None),
         StandardType(dialogflow="sys.duration", 
                      alexa="AMAZON.DURATION", 
@@ -97,8 +110,11 @@ class StandardTypes:
         StandardType(dialogflow="sys.number",
                      alexa="AMAZON.NUMBER", 
                      rasanlu=None),
+        StandardType(dialogflow="sys.number-integer", 
+                     alexa="AMAZON.NUMBER", 
+                     rasanlu=None),
         StandardType(dialogflow="sys.geo-country", 
-                     alexa="AMAZON.Country", 
+                     alexa="AMAZON.Country",  
                      rasanlu=None),
         StandardType(dialogflow="sys.geo-city", 
                      alexa="AMAZON.EUROPE_CITY", 
@@ -106,9 +122,13 @@ class StandardTypes:
         StandardType(dialogflow="sys.email", 
                      alexa="AMAZON.LITERAL", 
                      rasanlu=RegexType(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")),
+        StandardType(dialogflow="sys.flight-number",
+                     alexa="AMAZON.FOUR_DIGIT_NUMBER",
+                     rasanlu=None),
     ]
     @classmethod
     def find(cls, engine, key):
         for t in cls.all_types:
             if t.get(engine) == key:
                 return t
+        raise Exception("Cannot find type %s for %s" % (key, engine))

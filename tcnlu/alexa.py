@@ -56,6 +56,7 @@ class AlexaGenerator(Alexa):
         elif meta and type(meta) == CustomType:
             meta = meta.name
             return self._alexa_name(meta), False
+        raise Exception("item %r has not type" % item)
 
     def collect_slots(self, samples):
         """
@@ -71,7 +72,7 @@ class AlexaGenerator(Alexa):
                     slots.add((self._alexa_name(alias), meta))
         return slots
 
-    _alexa_sample_pattern = re.compile('[^a-zA-Z0-9_{} ]+')
+    _alexa_sample_pattern = re.compile('[^a-zA-Z0-9{} ]+')
     def get_sample_element(self, item):
         """
         Given an Item object, generate the Alexa representation of the part of sample is represents
