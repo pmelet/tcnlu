@@ -140,6 +140,13 @@ def on_intent(intent_request, session):
     # Dispatch to your skill's intent handlers
     return answer_basic(intent, session, response)
 
+def on_dialog_started(intent_request, session):
+    """ Called when the user specifies an intent for this skill """
+
+    print("on_dialog_started requestId=" + intent_request['requestId'] +
+          ", sessionId=" + session['sessionId'])
+
+    return continue_dialog()
 
 def on_session_ended(session_ended_request, session):
     """ Called when the user ends the session.
@@ -178,7 +185,7 @@ def lambda_handler(event, context):
     elif event['request']['type'] == "IntentRequest":
         dialog_state = event['request']['dialogState']
         if dialog_state in ("STARTED", "IN_PROGRESS"):
-            return continue_dialog()
+            return on_dialog_started(event['request'], event['session'])
         return on_intent(event['request'], event['session'])
     elif event['request']['type'] == "SessionEndedRequest":
         return on_session_ended(event['request'], event['session'])
