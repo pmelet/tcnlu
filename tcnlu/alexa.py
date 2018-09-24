@@ -109,5 +109,7 @@ class AlexaResponseGenerator(Alexa):
         ret = {}
         for intent in intents.values():
             name = self._alexa_name(intent.get("name"))
-            ret[name] = intent.responses.get(lang)
+            resp = intent.responses.get(lang)
+            if resp:
+                ret[name] = list(filter(lambda x:x is not None, resp))
         return json.dumps(ret, indent=2)
