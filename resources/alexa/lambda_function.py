@@ -159,6 +159,4 @@ def lambda_handler(event, context):
         return on_intent(event['request'], event['session'])
     elif event['request']['type'] == "SessionEndedRequest":
         return on_session_ended(event['request'], event['session'])
-        
-    return build_response(session_attributes, build_speechlet_response(
-        "error", "error!!", "try again, or not", true))
+    return build_response({}, build_speechlet_response("error", "error!!", "try again, or not", True))

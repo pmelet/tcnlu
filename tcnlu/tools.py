@@ -55,3 +55,12 @@ def enforce_list(o):
     if type(o) == list:
         return o
     return [o]
+
+
+def flatten(list_of_lists, flat_list=[]):
+    for item in list_of_lists:
+        if type(item) == list:
+            flatten(item, flat_list=flat_list)
+        else:
+            flat_list.append(item)
+    return flat_list

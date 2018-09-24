@@ -118,13 +118,13 @@ def formats_table(formats, header=True):
 @arg('--of', help='output format and version. format[:version]', required=True)
 @arg('ofiles', nargs='+', help='output files')
 @app
-def transform(ifile : "input file", ofiles, of=None, lang="en"):
+def transform(ifile : "input file", ofiles, of=None, lang="en", name="default name"):
     "Generate training file in a format from training file in another."
 
     # detect input format, and find parser
     from_format = detect_path(ifile)
     parser = get(FORMAT_HELPERS[from_format], "parser")
-    from_object = parser(ifile, name="etraveli")
+    from_object = parser(ifile, name=name)
 
     to_format = parse_format(of)
     if to_format is None:

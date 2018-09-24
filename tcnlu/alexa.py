@@ -1,5 +1,5 @@
 import re, json
-from .tools import get
+from .tools import get, enforce_list, flatten
 from .humans import numbers as transform_numbers
 from .objects import *
 
@@ -34,9 +34,10 @@ class AlexaGenerator(Alexa):
             samples = intent.samples.get(lang)
             if not samples:
                 continue
+            instance_samples = [ [ self.get_sample_element(item) for item in items ] for items in samples ]
             item = {
                 "name": self._alexa_name(intent.get("name")),
-                "samples": ["".join([self.get_sample_element(item) for item in items]) for items in samples]
+                "samples": self.flatten_samples(instance_samples)
             }
             slots = [{"name":name, "type": atype} for (name, atype) in self.collect_slots(samples)]
             if slots:
@@ -69,7 +70,11 @@ class AlexaGenerator(Alexa):
                 alias = item.name
                 if alias:
                     meta, _ = self._get_type(item)
-                    slots.add((self._alexa_name(alias), meta))
+                    if type(meta) == dict:
+                        for k,v in meta.items():
+                            slots.add((self._alexa_name(alias + "_" + k), v))
+                    else:
+                        slots.add((self._alexa_name(alias), meta))
         return slots
 
     _alexa_sample_pattern = re.compile('[^a-zA-Z0-9{} ]+')
@@ -82,11 +87,20 @@ class AlexaGenerator(Alexa):
         text = transform_numbers(source_text)
         text = self._alexa_sample_pattern.sub('', text)
         if alias:
-            _, example = self._get_type(item)
+            meta, example = self._get_type(item)
             if example:
-                return " {%s|%s} " % (text, self._alexa_name(alias))
+                return" {%s|%s} " % (text, self._alexa_name(alias))
+            if type(meta) == dict:
+                return [" {%s} " % self._alexa_name(alias + "_" + k) for k,v in meta.items()]
             return " {%s} " % self._alexa_name(alias)
         return text
+
+    def flatten_samples(self, samples):
+        ret = []
+        for sample in samples:
+            for s in walk_array(sample):
+                ret.append("".join(s))
+        return list(set(ret))
 
     def generate_entities(self, entities, lang="en"):
         """
@@ -99,6 +113,19 @@ class AlexaGenerator(Alexa):
             })
         return ret
 
+
+def walk_array(array, ret = []):
+    head, tail = array[0], array[1:] if len(array) > 1 else None
+    newret = []
+    for x in enforce_list(head):
+        if ret:
+            for ex in ret:
+                newret.append(ex + [x])
+        else:
+            newret.append([x])
+    if tail:
+        return walk_array(tail, newret)
+    return newret
 
 class AlexaResponseGenerator(Alexa):
     def __init__(self):
