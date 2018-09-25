@@ -1,5 +1,5 @@
 from collections import defaultdict
-
+import jsonpickle, json
 
 class NLUFormat:
     def get_name(self):
@@ -151,3 +151,34 @@ class StandardTypes:
             if t.get(engine) == key:
                 return t
         raise Exception("Cannot find type %s for %s" % (key, engine))
+
+
+class NeutralParser(NLUFormat):
+    def __init__(self, path, name="dummy"):
+        with open(path) as h:
+            data = json.load(h)
+            self.name = data.get("name")
+            self.intents = jsonpickle.decode(json.dumps(data.get("intents")))
+            self.entities = jsonpickle.decode(json.dumps(data.get("entities")))
+
+    def get_name(self):
+        return self.name
+
+    def get_intents(self):
+        return self.intents
+    
+    def get_entities(self):
+        return self.entities
+
+class NeutralGenerator():
+    def __init__(self):
+        pass
+    def generate(self, source, lang="en"):
+        name, intents, entities = source.get_name(), source.get_intents(), source.get_entities()
+        return json.dumps({
+            "format"   : "neutral",
+            "version"  : 1,
+            "name"     : name,
+            "intents"  : json.loads(jsonpickle.encode(intents)),
+            "entities" : json.loads(jsonpickle.encode(entities)),
+        }, indent=2)

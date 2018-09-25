@@ -6,35 +6,34 @@ from .tools import get, enforce_list
 from .objects import Entity, Intent, Sample, Item, StandardTypes, CustomType, NLUFormat, Slot
 from pprint import pprint
 import zipfile
+from tcnlu.fileutils import FolderFileAdaptor, ZipFileAdaptor
+
 
 class DialogFlowV1Parser(NLUFormat):
-    def __init__(self, path, name="dummy"):
+    def __init__(self, adaptor, path, name="dummy"):
         self.path = path
+        self.adaptor = adaptor(path)
         self.name = name
         self.intents, self.entities = None, None
         self.iszipfile = False
         if isfile(path):
             zipfile.ZipFile(path)
             self.iszipfile = True
-        
         self._parse_entities()
         self._parse_intents()
 
     def _parse_entities(self):
         ### TODO : Add a detection mechanism of the format (zip of folder) and use different file reading methods depending on the case.
         entities = defaultdict(Entity)
-        entities_path = os.path.join(self.path, "entities")
-        for file in listdir(entities_path):
-            filename = os.path.join(entities_path, file)
-            tocheck = file.rsplit("_", 2)
-            with open(filename, encoding="utf8") as h:
-                data = json.load(h)
+        for entry in self.adaptor.listdir("entities"):
+            tocheck = entry.rsplit("_", 2)
+            data = self.adaptor.json("entities", entry)    
             if len(tocheck)==3 and tocheck[1] == "entries":
                 name = tocheck[0]
                 language = tocheck[2].split(".")[0]
                 entities[name].add_entries(language, data)
             else:
-                name = file.rsplit(".",1)[0]
+                name = entry.rsplit(".",1)[0]
                 entities[name].set_param("name", get(data, "name"))
         #pprint(entities)
         self.entities = entities
@@ -42,12 +41,9 @@ class DialogFlowV1Parser(NLUFormat):
     def _parse_intents(self):
         ### TODO : Add a detection mechanism of the format (zip of folder) and use different file reading methods depending on the case.
         intents = defaultdict(Intent)
-        intents_path = os.path.join(self.path, "intents")
-        for file in listdir(intents_path):
-            filename = os.path.join(intents_path, file)
-            tocheck = file.rsplit("_", 2)
-            with open(filename, encoding="utf8") as h:
-                data = json.load(h)
+        for entry in self.adaptor.listdir("intents"):
+            tocheck = entry.rsplit("_", 2)
+            data = self.adaptor.json("intents", entry)            
             if len(tocheck)==3 and tocheck[1] == "usersays":
                 # "usersays" file contains samples
                 name = tocheck[0]
@@ -55,7 +51,7 @@ class DialogFlowV1Parser(NLUFormat):
                 intents[name].add_samples(language, self._extract_samples(data))
             else:
                 # intent file, contains metadata : parameters, messages, etc.
-                name = file.rsplit(".",1)[0]
+                name = entry.rsplit(".",1)[0]
                 intents[name].set_param("name", get(data, "name"))
                 for parameter in get(data, "responses.0.parameters"):
                     slot_name     = get(parameter, "name")
@@ -98,3 +94,12 @@ class DialogFlowV1Parser(NLUFormat):
     
     def get_entities(self):
         return self.entities
+
+
+class DialogFlowV1FolderParser(DialogFlowV1Parser):
+    def __init__(self, path, name="dummy"):
+        super(DialogFlowV1FolderParser, self).__init__(FolderFileAdaptor, path, name)
+
+class DialogFlowV1ZipParser(DialogFlowV1Parser):
+    def __init__(self, path, name="dummy"):
+        super(DialogFlowV1ZipParser, self).__init__(ZipFileAdaptor, path, name)

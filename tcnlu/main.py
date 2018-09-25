@@ -1,7 +1,10 @@
+#! /usr/bin/python3
+
 import json, sys, os
 from os import listdir
 import re
-from collections import defaultdict, Iterable
+from collections import defaultdict
+from collections.abc import Iterable
 from html import escape
 import zipfile
 import json
@@ -11,21 +14,27 @@ import argh
 from argh import arg
 from argh import EntryPoint
 
-from .humans import numbers as transform_numbers
-from .tools import get
-from .dialogflow import DialogFlowV1Parser
-from .alexa import AlexaGenerator, AlexaResponseGenerator
-from .rasa import RasaMarkDownGenerator, RasaResponseGenerator
-from .exceptions import TcnluError
-from .exceptions import ERROR_INPUT_FORMAT_NOT_DETECTED, ERROR_OUTPUT_FORMAT_NOT_DETECTED
-from .formats import DIALOG_FLOW_V1, ALEXA_JSON, FORMAT_NOT_DETECTED, RASANLU_JSON, RASANLU_MKD
-from .formats import detect_path
+from tcnlu.humans import numbers as transform_numbers
+from tcnlu.tools import get
+from tcnlu.dialogflow import DialogFlowV1FolderParser, DialogFlowV1ZipParser
+from tcnlu.alexa import AlexaGenerator, AlexaResponseGenerator
+from tcnlu.rasa import RasaMarkDownGenerator, RasaResponseGenerator
+from tcnlu.exceptions import TcnluError
+from tcnlu.exceptions import ERROR_INPUT_FORMAT_NOT_DETECTED, ERROR_OUTPUT_FORMAT_NOT_DETECTED
+from tcnlu.formats import DIALOG_FLOW_V1_FOLDER, DIALOG_FLOW_V1_ZIP, ALEXA_JSON, FORMAT_NOT_DETECTED, RASANLU_JSON, RASANLU_MKD
+from tcnlu.formats import NEUTRAL_JSON_1
+from tcnlu.formats import detect_path
+from tcnlu.objects import NeutralGenerator, NeutralParser
 
 app = EntryPoint('tcnlu')
 
 FORMAT_HELPERS = {
-    DIALOG_FLOW_V1 : {
-        "parser": DialogFlowV1Parser,
+    DIALOG_FLOW_V1_FOLDER : {
+        "parser": DialogFlowV1FolderParser,
+        "generators": None
+    },
+    DIALOG_FLOW_V1_ZIP : {
+        "parser": DialogFlowV1ZipParser,
         "generators": None
     },
     ALEXA_JSON : {
@@ -40,6 +49,10 @@ FORMAT_HELPERS = {
         "parser": None,
         "generators": (RasaMarkDownGenerator, RasaResponseGenerator)
     },
+    NEUTRAL_JSON_1: {
+        "parser": NeutralParser,
+        "generators": NeutralGenerator
+    }
 }
 
 def parse_format(input):
@@ -118,7 +131,7 @@ def formats_table(formats, header=True):
 @arg('--lang', help='language', required=False)
 @arg('--of', help='output format and version. format[:version]', required=True)
 @app
-def transform(ifile : "input file", ofiles, of=None, lang="en", name="default name"):
+def transform(ifile, ofiles, of=None, lang="en", name="default name"):
     "Generate training file in a format from training file in another."
 
     # detect input format, and find parser
@@ -142,6 +155,8 @@ def transform(ifile : "input file", ofiles, of=None, lang="en", name="default na
                 h.write(data)
 
 def main():
+    if sys.version_info[0] < 3:
+        raise Exception("Python 3 or a more recent version is required.")
     try:
         app()
     except TcnluError as e:
