@@ -1,4 +1,10 @@
 # Installation
+## pip
+
+    pip install tcnlu
+
+## Development
+
 This package is still in development.
 
     git clone https://github.com/pmelet/tcnlu.git

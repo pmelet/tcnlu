@@ -113,10 +113,10 @@ def formats_table(formats, header=True):
     else:
         print(tabulate(tab, tablefmt="plain"))
 
-@arg('--lang', help='language', required=False)
 @arg('ifile', help='input file')
-@arg('--of', help='output format and version. format[:version]', required=True)
 @arg('ofiles', nargs='+', help='output files')
+@arg('--lang', help='language', required=False)
+@arg('--of', help='output format and version. format[:version]', required=True)
 @app
 def transform(ifile : "input file", ofiles, of=None, lang="en", name="default name"):
     "Generate training file in a format from training file in another."
