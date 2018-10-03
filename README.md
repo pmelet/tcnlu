@@ -54,15 +54,12 @@ Returns 0 if detected and valid, else return error code
  - 2 = input file was analyzed and is corrupted
 
 ## Format transcoding
-    tcnlu transform input --of <format>[:<variant>] output [output ...]
-
-Generate training file in a format from training file in another.
 
 ```
 usage: tcnlu transform [-h] --of OF [--lang LANG] [--name NAME] [--no-literal]
                        ifile ofiles [ofiles ...]
 
-Generate training file in a format from training file in another.
+Generate training file in a given format based on another training file in another format.
 
 positional arguments:
   ifile         input file

@@ -134,7 +134,7 @@ def formats_table(formats, header=True):
 @arg('--no-literal', help='For alexa: reject intents involving AMAZON.LITERAL entities (skills using prompts and LITERAL fail to build)', required=False, default=False)
 @app
 def transform(ifile, ofiles, of=None, lang="en", name="default name", **kwargs):
-    "Generate training file in a format from training file in another."
+    "Generate training file in a given format based on another training file in another format."
 
     # detect input format, and find parser
     from_format = detect_path(ifile)
