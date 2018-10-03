@@ -12,7 +12,7 @@ class RasaMarkDownGenerator(Rasa):
     def __init__(self):
         pass
 
-    def generate(self, source, lang="en"):
+    def generate(self, source, lang="en", **kwargs):
         _, intents, entities = source.get_name(), source.get_intents(), source.get_entities()
         outfile = []
         for _, intent in intents.items():
@@ -73,7 +73,7 @@ class RasaResponseGenerator(Rasa):
     def __init__(self):
         pass
 
-    def generate(self, source, lang="en"):
+    def generate(self, source, lang="en", **kwargs):
         intents = source.get_intents()
         ret = {}
         for intent in intents.values():

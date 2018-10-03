@@ -58,23 +58,37 @@ Returns 0 if detected and valid, else return error code
 
 Generate training file in a format from training file in another.
 
+```
+usage: tcnlu transform [-h] --of OF [--lang LANG] [--name NAME] [--no-literal]
+                       ifile ofiles [ofiles ...]
+
+Generate training file in a format from training file in another.
+
+positional arguments:
+  ifile         input file
+  ofiles        output files
+
+optional arguments:
+  -h, --help    show this help message and exit
+  --of OF       output format and version. format[:version] (default: -)
+  --lang LANG   language (default: 'en')
+  --name NAME   Agent name (default: 'default name')
+  --no-literal  For alexa: reject intents if that would contain AMAZON.LITERAL
+                (necessary if using prompts) (default: False)
+```
+
 Returns 0 if detected and valid, else return error code
 
  - 1 = input format is not recognized
  - 10 = output format is not recognized
 
-### Alexa
-
-    tcnlu transform <input file in another format> --of alexa <alexa json> [responses json]
-with:
+### Output files
+####Alexa
 
  - `alexa json`: a file that can be imported into alexa
  - `responses json`: a file that can be used to generate responses in a lambda function. Lambda function is available in `resources/alexa`
 
- ### Rasa
-
-    tcnlu transform <input file in another format> --of rasanlu:[markdown or json] <rasa file> [responses json]
-with:
+#### Rasa
 
  - `rasa file`: a file that can be imported into rasa nlu
- - `responses json`: a file that can be used to generate responses
+ - `responses json`: a file that can be used to generate responses in application. Test script is available in `resources/rasanlu`

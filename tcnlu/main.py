@@ -130,8 +130,10 @@ def formats_table(formats, header=True):
 @arg('ofiles', nargs='+', help='output files')
 @arg('--lang', help='language', required=False)
 @arg('--of', help='output format and version. format[:version]', required=True)
+@arg('--name', help='Agent name', required=False)
+@arg('--no-literal', help='For alexa: reject intents involving AMAZON.LITERAL entities (skills using prompts and LITERAL fail to build)', required=False, default=False)
 @app
-def transform(ifile, ofiles, of=None, lang="en", name="default name"):
+def transform(ifile, ofiles, of=None, lang="en", name="default name", **kwargs):
     "Generate training file in a format from training file in another."
 
     # detect input format, and find parser
@@ -147,7 +149,7 @@ def transform(ifile, ofiles, of=None, lang="en", name="default name"):
         generators = [ generators ]
     for (generator, ofile) in zip(generators, ofiles):
         to_object = generator()
-        data = to_object.generate(from_object, lang=lang)
+        data = to_object.generate(from_object, lang=lang, **kwargs)
         if ofile == "-":
             print (data)
         else:
