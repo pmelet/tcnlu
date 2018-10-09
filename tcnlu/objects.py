@@ -31,6 +31,10 @@ class Sample:
     def add_item(self, text, name=None, meta=None):
         self.items.append(Item(text, name, meta))
 
+    @property
+    def text(self):
+        return "".join(x.text for x in self.items)
+
 class Slot():
     def __init__(self, name, dataType, required):
         self.name = name
@@ -206,8 +210,15 @@ class ResponsesGenerator():
         ret = []
         for intent in intents.values():
             name = intent.get("name")
+            samples = intent.samples.get(lang)
+            if samples:
+                #samples = sorted([i.text for i in samples], key=lambda i:len(i))
+                best = " | ".join(x.text for x in samples)
+            else:
+                best = ""
             resp = intent.responses.get(lang)
             for x in filter(lambda x:x is not None, resp):
-                ret.append([name, re.sub("[\n\r]", "", x.text)] + list(x.quick_replies))
+                ret.append([name, best, re.sub("[\n\r]", "", x.text), " | ".join(x.quick_replies)])
+            ret.sort(key=lambda x:x[0])
         return "\n".join("\t".join(i) for i in ret)
         
