@@ -78,5 +78,6 @@ class RasaResponseGenerator(Rasa):
         ret = {}
         for intent in intents.values():
             name = self._rasa_name(intent.get("name"))
-            ret[name] = intent.responses.get(lang)
+            resp = intent.responses.get(lang)
+            ret[name] = list(map(lambda x:x.text + " ".join(map(lambda i:i+"?", x.quick_replies)), filter(lambda x:x is not None, resp)))
         return json.dumps(ret, indent=2)

@@ -3,7 +3,7 @@ from os import listdir
 from os.path import isfile, join
 from collections import defaultdict
 from .tools import get, enforce_list
-from .objects import Entity, Intent, Sample, Item, StandardTypes, CustomType, NLUFormat, Slot
+from .objects import Entity, Intent, Sample, Item, StandardTypes, CustomType, NLUFormat, Slot, Response
 from pprint import pprint
 import zipfile
 from tcnlu.fileutils import FolderFileAdaptor, ZipFileAdaptor
@@ -64,7 +64,9 @@ class DialogFlowV1Parser(NLUFormat):
                             slot.add_prompt(get(prompt, "lang"), get(prompt, "value"))
                     intents[name].add_slot(slot)
                 for item in get(data, "responses.0.messages"):
-                    intents[name].add_responses(item.get("lang"), enforce_list(item.get("speech")))
+                    for response in enforce_list(item.get("speech")):
+                        resp_items = response.split(";")
+                        intents[name].add_response(item.get("lang"), Response(*resp_items))
         self.intents = intents
 
     def _extract_samples(self, data):

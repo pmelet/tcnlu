@@ -1,5 +1,5 @@
 from collections import defaultdict
-import jsonpickle, json
+import jsonpickle, json, re
 
 class NLUFormat:
     def get_name(self):
@@ -61,6 +61,10 @@ class Intent:
         if responses:
             self.responses[language].extend(responses)
 
+    def add_response(self, language, response):
+        if response:
+            self.responses[language].append(response)
+
     def set_param(self, key, value):
         self.params[key] = value
 
@@ -69,6 +73,11 @@ class Intent:
 
     def __repr__(self):
         return "%r" % self.params
+
+class Response:
+    def __init__(self, text, *quick_replies):
+        self.text = text
+        self.quick_replies = quick_replies
 
 class Entity:
     def __init__(self):
@@ -86,6 +95,9 @@ class Entity:
 
     def get(self, key):
         return self.params.get(key)
+
+
+
 
 class Type:
     def __init__(self, name):
@@ -173,6 +185,7 @@ class NeutralParser(NLUFormat):
 class NeutralGenerator():
     def __init__(self):
         pass
+
     def generate(self, source, lang="en"):
         name, intents, entities = source.get_name(), source.get_intents(), source.get_entities()
         return json.dumps({
@@ -182,3 +195,19 @@ class NeutralGenerator():
             "intents"  : json.loads(jsonpickle.encode(intents)),
             "entities" : json.loads(jsonpickle.encode(entities)),
         }, indent=2)
+
+
+class ResponsesGenerator():
+    def __init__(self):
+        pass
+
+    def generate(self, source, lang="en", **kwargs):
+        intents = source.get_intents()
+        ret = []
+        for intent in intents.values():
+            name = intent.get("name")
+            resp = intent.responses.get(lang)
+            for x in filter(lambda x:x is not None, resp):
+                ret.append([name, re.sub("[\n\r]", "", x.text)] + list(x.quick_replies))
+        return "\n".join("\t".join(i) for i in ret)
+        

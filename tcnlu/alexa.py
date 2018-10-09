@@ -68,13 +68,12 @@ class AlexaGenerator(Alexa):
                     "invocationName": name,
                     "intents": self.generate_intents(intents, add_default=True, lang=lang, reject_literals=reject_literals),
                     "types": self.generate_entities(entities, lang=lang)
-                },
-                "dialog": {
-                    "intents": dialog_intents
-                },
-                "prompts": prompts
+                }
             }
         }
+        if dialog_intents:
+            ret["dialog"] = { "intents": dialog_intents }
+            ret["prompts"] = prompts
         return json.dumps(ret, indent=2)
 
     def generate_prompts(self, intents, lang="en", reject_literals=False):
@@ -190,6 +189,5 @@ class AlexaResponseGenerator(Alexa):
                 continue
             name = self._alexa_name(intent.get("name"))
             resp = intent.responses.get(lang)
-            if resp:
-                ret[name] = list(filter(lambda x:x is not None, resp))
+            ret[name] = list(map(lambda x:x.text + " ".join(map(lambda i:i+"?", x.quick_replies)), filter(lambda x:x is not None, resp)))
         return json.dumps(ret, indent=2)

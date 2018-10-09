@@ -22,9 +22,9 @@ from tcnlu.rasa import RasaMarkDownGenerator, RasaResponseGenerator
 from tcnlu.exceptions import TcnluError
 from tcnlu.exceptions import ERROR_INPUT_FORMAT_NOT_DETECTED, ERROR_OUTPUT_FORMAT_NOT_DETECTED
 from tcnlu.formats import DIALOG_FLOW_V1_FOLDER, DIALOG_FLOW_V1_ZIP, ALEXA_JSON, FORMAT_NOT_DETECTED, RASANLU_JSON, RASANLU_MKD
-from tcnlu.formats import NEUTRAL_JSON_1
+from tcnlu.formats import NEUTRAL_JSON_1, RESPONSES_CSV
 from tcnlu.formats import detect_path
-from tcnlu.objects import NeutralGenerator, NeutralParser
+from tcnlu.objects import NeutralGenerator, NeutralParser, ResponsesGenerator
 
 app = EntryPoint('tcnlu')
 
@@ -52,7 +52,11 @@ FORMAT_HELPERS = {
     NEUTRAL_JSON_1: {
         "parser": NeutralParser,
         "generators": NeutralGenerator
-    }
+    },
+    RESPONSES_CSV: {
+        "parser": None,
+        "generators": ResponsesGenerator
+    },
 }
 
 def parse_format(input):
